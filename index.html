@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WILDWATCH | Autonomous Detection</title>
+    <link
+      rel="stylesheet"
+      href="https://maxst.icons8.com/plasticine/1.0.0/css/line-awesome.min.css"
+    />
+    <style>
+      :root {
+        --apple-black: #000000;
+        --apple-dark-gray: #1d1d1f;
+        --glass: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --accent-green: #00ff7f;
+        --accent-red: #ff3b30;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      body {
+        background-color: var(--apple-black);
+        color: white;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue",
+          Arial, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        letter-spacing: -0.02em;
+      }
+
+      /* Ambient background glow */
+      .ambient-glow {
+        position: absolute;
+        width: 40vw;
+        height: 40vw;
+        background: radial-gradient(
+          circle,
+          rgba(46, 204, 113, 0.05) 0%,
+          rgba(0, 0, 0, 0) 70%
+        );
+        top: -10vw;
+        right: -10vw;
+        z-index: -1;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 100vh;
+        padding: 40px;
+        gap: 40px;
+      }
+
+      /* --- Global HUD Text --- */
+      .hud-overlay {
+        position: absolute;
+        top: 40px;
+        left: 40px;
+        z-index: 10;
+      }
+      .hud-overlay h1 {
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        opacity: 0.4;
+      }
+
+      .nav-links {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        display: flex;
+        gap: 30px;
+        font-size: 12px;
+        opacity: 0.4;
+      }
+
+      /* --- Glass Cards --- */
+      .view-sector {
+        position: relative;
+        background: var(--glass);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .view-sector:hover {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .label {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        font-size: 11px;
+        font-weight: 500;
+        opacity: 0.5;
+      }
+
+      .image-viewport {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 60px;
+      }
+      .image-viewport img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 12px;
+        filter: contrast(1.1);
+      }
+
+      /* --- Minimal Form --- */
+      .controls {
+        position: absolute;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 8px;
+        border-radius: 100px;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(10px);
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+      .custom-upload {
+        padding: 10px 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #888;
+        cursor: pointer;
+      }
+      .btn-submit {
+        background: white;
+        color: black;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 100px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-submit:hover {
+        transform: scale(1.05);
+      }
+
+      /* --- Status indicators --- */
+      .status-pill {
+        position: absolute;
+        top: 25px;
+        right: 25px;
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .fire {
+        color: var(--accent-red);
+        border: 1px solid var(--accent-red);
+        box-shadow: 0 0 20px rgba(255, 59, 48, 0.2);
+      }
+      .clear {
+        color: var(--accent-green);
+        border: 1px solid var(--accent-green);
+      }
+
+      .details {
+        position: absolute;
+        bottom: 25px;
+        left: 25px;
+        font-size: 11px;
+        opacity: 0.4;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ambient-glow"></div>
+
+    <div class="hud-overlay">
+      <h1>WILDWATCH / SATELLITE CORE</h1>
+    </div>
+
+    <main>
+      <div class="view-sector">
+        <span class="label">01 // RAW_DATA_STREAM</span>
+        <div class="image-viewport">
+          {% if original %}
+          <img src="{{ url_for('display_image', filename=original) }}" />
+          {% else %}
+          <p style="opacity: 0.2">Idle Feed</p>
+          {% endif %}
+        </div>
+        <div class="details">
+          RESOLUTION: 4K OPTIMIZED<br />
+          SOURCE: SENTINEL-2 L1C
+        </div>
+      </div>
+
+      <div class="view-sector">
+        <span class="label">02 // NEURAL_OVERLAY</span>
+        {% if image %}
+        <div class="status-pill {{ 'fire' if fire else 'clear' }}">
+          {{ 'CRITICAL_HEAT_DETECTED' if fire else 'NOMINAL' }}
+        </div>
+        {% endif %}
+
+        <div class="image-viewport">
+          {% if image %}
+          <img src="{{ url_for('display_image', filename=image) }}" />
+          {% else %}
+          <p style="opacity: 0.2">Awaiting Analysis</p>
+          {% endif %}
+        </div>
+
+        <div class="details">
+          LATENCY: 142MS<br />
+          ALGORITHM: SUBTLE_RED_REF v3
+        </div>
+      </div>
+    </main>
+
+    <div class="nav-links">
+      <span>SYSTEM_STATUS: ACTIVE</span>
+      <span>© 2026 WILDWATCH</span>
+    </div>
+
+    <form class="controls" method="POST" enctype="multipart/form-data">
+      <label for="file-upload" class="custom-upload">
+        <i class="la la-plus"></i> <span id="file-name">SELECT_FILE</span>
+      </label>
+      <input
+        id="file-upload"
+        type="file"
+        name="file"
+        onchange="
+          document.getElementById('file-name').innerHTML = this.files[0].name
+        "
+      />
+      <button type="submit" class="btn-submit">INITIALIZE</button>
+    </form>
+  </body>
+</html>
